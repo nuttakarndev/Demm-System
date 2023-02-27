@@ -1,5 +1,6 @@
 import Page from "@/component/Page";
 import PrivateRoute from "@/component/PrivateRouter/PrivateRouter";
+import { useFunction } from "@/helper/context/AppProvider";
 import { changeDevice, getDevices } from "@/helper/redux/slice/device.sliec";
 import { PickList } from "primereact/picklist";
 import { useEffect } from "react";
@@ -7,6 +8,7 @@ import { useDispatch, useSelector } from "react-redux";
 export default function Home() {
   const dispatch = useDispatch();
   const { devices, current } = useSelector((state) => state.device);
+  const { settings, loading } = useFunction();
   useEffect(() => {
     dispatch(getDevices());
   }, [dispatch]);
@@ -19,18 +21,14 @@ export default function Home() {
         <section>
           <h3>Welcome</h3>
           <span className="text-gray-700">
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Sunt
-            possimus earum cupiditate aspernatur reprehenderit, molestiae
-            corporis! Facere minima corrupti amet consequatur sapiente maiores
-            est in id dolorum dicta, magni aut! Voluptates consequatur autem
-            reiciendis vitae quos pariatur, consectetur quod hic?
+            {!loading && <>{settings.welcome_desc}</>}
           </span>
         </section>
         <section>
           <h4>Manage Devices</h4>
           <PickList
-            source={devices.filter((d) => !current.includes(d))}
-            target={current}
+            source={devices.filter((d) => !current?.includes(d))}
+            target={current || []}
             onChange={onChange}
             sourceHeader="Available"
             showSourceControls={false}

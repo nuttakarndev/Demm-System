@@ -24,7 +24,7 @@ export default function Sidebar() {
             <div className="email">{user?.email}</div>
           </div>
           <ul className="devices mt-3">
-            {current.map((item) => (
+            {current?.map((item) => (
               <SidebarItem key={item} device={item} router={router} />
             ))}
           </ul>

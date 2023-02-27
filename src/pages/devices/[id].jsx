@@ -46,6 +46,9 @@ const Device = () => {
     onSubmit: (values) => {
       setFiltered(ChartUtils.filter(records, values.startDate, values.endDate));
     },
+    onReset: () => {
+      setFiltered(ChartUtils.filter(records, new Date(), new Date()));
+    },
   });
   useEffect(() => {
     if (id) {
@@ -57,6 +60,10 @@ const Device = () => {
       setFiltered(ChartUtils.filter(records, new Date(), new Date()));
     }
   }, [records]);
+  useEffect(() => {
+    setFiltered(ChartUtils.filter(records, new Date(), new Date()));
+    formik.resetForm();
+  }, [id]);
   return (
     <PrivateRoute>
       <Page>
@@ -77,6 +84,7 @@ const Device = () => {
                 className={formik.errors.startDate && "p-invalid"}
                 value={formik.values.startDate}
                 name="startDate"
+                showButtonBar
                 dateFormat="dd/mm/yy"
                 onChange={formik.handleChange}
                 maxDate={formik.values.endDate}
@@ -98,6 +106,7 @@ const Device = () => {
                 value={formik.values.endDate}
                 name="endDate"
                 dateFormat="dd/mm/yy"
+                showButtonBar
                 onChange={formik.handleChange}
                 minDate={formik.values.startDate}
               />

@@ -1,7 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap");
 * {
-  font-family: 'Poppins', sans-serif;
-
+  font-family: "Poppins", sans-serif;
 }
 html,
 body {
@@ -14,6 +13,7 @@ body {
   --primary: #2b3467;
   --secondary: #bad7e9;
   --background: #fcffe7;
+  --card: #fff;
 }
 main {
   width: 100vw;
@@ -105,7 +105,7 @@ main {
 }
 
 section {
-  background-color: white;
+  background-color: var(--card);
   padding: 20px;
   box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 12px;
   margin: 20px 0;

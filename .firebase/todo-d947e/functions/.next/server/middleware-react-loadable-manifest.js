@@ -1,0 +1,1 @@
+self.__REACT_LOADABLE_MANIFEST={"..\\..\\node_modules\\primereact\\chart\\chart.esm.js -> chart.js/auto":{id:9085,files:["static/chunks/ee8b1517.3b19c505ca0cbc69.js","static/chunks/352.f88bf3b3845e0077.js"]}};
