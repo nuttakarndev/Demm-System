@@ -3,18 +3,33 @@ import useAuth from "@/helper/hook/useAuth";
 const { createSlice, createAsyncThunk } = require("@reduxjs/toolkit");
 
 export const userSignIn = createAsyncThunk(
-  "auth/sigin",
+  "auth/sigIn",
   async ({ email, password }, { rejectWithValue }) => {
     try {
       const { signIn } = useAuth();
       const { user } = await signIn(email, password);
       return user;
     } catch (err) {
-      return rejectWithValue("Username or Password incorrect!");
+      return rejectWithValue(err.message);
     }
   }
 );
 
+export const userSignUp = createAsyncThunk(
+  "auth/signUp",
+  async ({ email, password }, { rejectWithValue }) => {
+    try {
+      const { signUp } = useAuth();
+      const { user } = await signUp(email, password);
+      return user;
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+export const clearUserError = createAsyncThunk("auth/reset", async () => {
+  return {};
+});
 export const userSignOut = createAsyncThunk("auth/signOut", async () => {
   const { signOut } = useAuth();
   const result = await signOut();
@@ -46,6 +61,22 @@ const auth = createSlice({
     },
     [userSignOut.rejected]: (state, action) => {
       state.error = action.payload;
+      state.loading = false;
+    },
+    [userSignUp.pending]: (state) => {
+      state.loading = true;
+    },
+    [userSignUp.fulfilled]: (state, action) => {
+      state.loading = false;
+      state.user = action.payload;
+      state.error = null;
+    },
+    [userSignUp.rejected]: (state, action) => {
+      state.error = action.payload;
+      state.loading = false;
+    },
+    [clearUserError.fulfilled]: (state) => {
+      state.error = null;
       state.loading = false;
     },
   },

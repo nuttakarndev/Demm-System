@@ -2,218 +2,196 @@ import Page from "@/component/Page";
 import { useRouter } from "next/router";
 import { Chart } from "primereact/chart";
 import { Calendar } from "primereact/calendar";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { DataTable } from "primereact/datatable";
 import { Button } from "primereact/button";
 import { Column } from "primereact/column";
-import { Checkbox } from "primereact/checkbox";
-import useDevice from "@/helper/hook/useDevice";
+import PrivateRoute from "@/component/PrivateRouter/PrivateRouter";
+import { useDispatch, useSelector } from "react-redux";
+import { TabMenu } from "primereact/tabmenu";
+import { getRecords } from "@/helper/redux/slice/device.sliec";
 import ChartUtils from "@/helper/utils/ChartUtils";
+import { useFormik } from "formik";
+import { date, object } from "yup";
+import DateUtils from "@/helper/utils/DateUtils";
+import useVoltage from "@/helper/hook/useVoltage";
+import { DateTime } from "luxon";
+import useCurrent from "@/helper/hook/useCurrent";
+import usePower from "@/helper/hook/usePower";
 const Device = () => {
   const router = useRouter();
+  const dispatch = useDispatch();
   const { id } = router.query;
-  const [chartData, setChartData] = useState({});
-  const [chartOptions, setChartOptions] = useState({});
-  const [filterDate, setFilterDate] = useState({
-    startDate: null,
-    endDate: null,
+  const [active, setActive] = useState(0);
+  const { records } = useSelector((state) => state.device);
+  const [filtered, setFiltered] = useState([]);
+  const { voltageData, voltageOption } = useVoltage(filtered);
+  const { currentData, currentOption } = useCurrent(filtered);
+  const { powerData, powerOption } = usePower(filtered);
+  const formik = useFormik({
+    initialValues: {
+      startDate: null,
+      endDate: null,
+    },
+    validationSchema: object().shape({
+      startDate: date()
+        .nullable()
+        .required("field required!")
+        .typeError("field required!"),
+      endDate: date()
+        .nullable()
+        .required("field required!")
+        .typeError("field required!"),
+    }),
+    onSubmit: (values) => {
+      setFiltered(ChartUtils.filter(records, values.startDate, values.endDate));
+    },
   });
-  const [voltage, setVoltage] = useState(true);
-  const [current, setCurrent] = useState(true);
-  const [power, setPower] = useState(true);
-  const { records } = useDevice(id);
   useEffect(() => {
-    const documentStyle = getComputedStyle(document.documentElement);
-    const textColor = documentStyle.getPropertyValue("--text-color");
-    const textColorSecondary = documentStyle.getPropertyValue(
-      "--text-color-secondary"
-    );
-    const surfaceBorder = documentStyle.getPropertyValue("--surface-border");
-    const data = {
-      labels: ChartUtils.getDeviceLabel(records),
-      datasets: [
-        voltage
-          ? {
-              label: "Voltage",
-              data: [4, 3],
-              fill: false,
-              borderColor: documentStyle.getPropertyValue("--blue-500"),
-              tension: 0.4,
-            }
-          : null,
-        power
-          ? {
-              label: "Power",
-              data: [1, 3],
-              fill: false,
-              borderColor: documentStyle.getPropertyValue("--yellow-500"),
-              tension: 0.4,
-            }
-          : null,
-        current
-          ? {
-              label: "Current",
-              data: [3, 2],
-              fill: false,
-              borderColor: documentStyle.getPropertyValue("--pink-500"),
-              tension: 0.4,
-            }
-          : null,
-      ].filter((i) => i != null),
-    };
-    const options = {
-      maintainAspectRatio: false,
-      aspectRatio: 0.6,
-      plugins: {
-        legend: {
-          labels: {
-            color: textColor,
-          },
-          position: "bottom",
-        },
-      },
-      scales: {
-        x: {
-          ticks: {
-            color: textColorSecondary,
-          },
-          grid: {
-            color: surfaceBorder,
-          },
-        },
-        y: {
-          ticks: {
-            color: textColorSecondary,
-          },
-          grid: {
-            color: surfaceBorder,
-          },
-        },
-      },
-    };
-
-    setChartData(data);
-    setChartOptions(options);
-  }, [records, voltage, power, current]);
-  const handleReset = () => setFilterDate({ startDate: null, endDate: null });
+    if (id) {
+      dispatch(getRecords(id));
+    }
+  }, [dispatch, id]);
+  useEffect(() => {
+    if (!formik.values.startDate && !formik.values.endDate) {
+      setFiltered(ChartUtils.filter(records, new Date(), new Date()));
+    }
+  }, [records]);
   return (
-    <Page>
-      <section className="flex align-items-center justify-content-between flex-wrap gap-3">
-        <div>
-          <h2>Device: {id}</h2>
-          <span>DateTime (Today): {new Date().toLocaleDateString()}</span>
-        </div>
-        <div className="flex align-items-center gap-3">
-          <Calendar
-            showIcon
-            placeholder="Start Date"
-            value={filterDate.startDate}
-            onChange={(e) =>
-              setFilterDate((f) => ({ ...f, startDate: e.value }))
-            }
-            maxDate={filterDate.endDate}
-          />
-          <Calendar
-            showIcon
-            placeholder="End Date"
-            value={filterDate.endDate}
-            onChange={(e) => setFilterDate((f) => ({ ...f, endDate: e.value }))}
-            minDate={filterDate.startDate}
-          />
-          <div className="flex gap-1">
-            <Button icon="pi pi-search" />
-            <Button
-              icon="pi pi-refresh"
-              className="p-button-secondary"
-              onClick={handleReset}
-            />
+    <PrivateRoute>
+      <Page>
+        <section className="flex align-items-center justify-content-between flex-wrap gap-3">
+          <div>
+            <h2>Device: {id}</h2>
+            <span>DateTime (Today): {DateUtils.getCurrent()}</span>
           </div>
-        </div>
-      </section>
-      <section>
-        <div className="grid">
-          <div className="col-4">
-            <h4>Voltage (avg)</h4>
-            <div>14.5</div>
-          </div>
-          <div className="col-4">
-            <h4>Current (avg)</h4>
-            <div>14.5</div>
-          </div>
-          <div className="col-4">
-            <h4>Power (avg)</h4>
-            <div>14.5</div>
-          </div>
-        </div>
-      </section>
-      <section>
-        <div className="grid">
-          <div className="col-12">
-            <div className="flex gap-3 justify-content-center">
-              <div className="field-checkbox">
-                <Checkbox
-                  inputId="voltage"
-                  name="voltage"
-                  value="voltage"
-                  checked={voltage}
-                  onChange={() => setVoltage((e) => !e)}
-                />
-                <label htmlFor="voltage">Voltage</label>
-              </div>
-              <div className="field-checkbox">
-                <Checkbox
-                  inputId="current"
-                  name="current"
-                  value="current"
-                  checked={current}
-                  onChange={() => setCurrent((e) => !e)}
-                />
-                <label htmlFor="current">Current</label>
-              </div>
-              <div className="field-checkbox">
-                <Checkbox
-                  inputId="power"
-                  name="power"
-                  value="power"
-                  checked={power}
-                  onChange={() => setPower((e) => !e)}
-                />
-                <label htmlFor="power">Power</label>
-              </div>
+          <form
+            onSubmit={formik.handleSubmit}
+            onReset={formik.handleReset}
+            className="flex align-items-center gap-3"
+          >
+            <div className="relative">
+              <Calendar
+                showIcon
+                placeholder="Start Date"
+                className={formik.errors.startDate && "p-invalid"}
+                value={formik.values.startDate}
+                name="startDate"
+                dateFormat="dd/mm/yy"
+                onChange={formik.handleChange}
+                maxDate={formik.values.endDate}
+              />
+              {formik.errors.startDate && (
+                <small
+                  className="text-red-500 absolute"
+                  style={{ width: "100%", bottom: "-20px", left: "5px" }}
+                >
+                  {formik.errors.startDate}
+                </small>
+              )}
+            </div>
+            <div className="relative">
+              <Calendar
+                showIcon
+                placeholder="End Date"
+                className={formik.errors.endDate && "p-invalid"}
+                value={formik.values.endDate}
+                name="endDate"
+                dateFormat="dd/mm/yy"
+                onChange={formik.handleChange}
+                minDate={formik.values.startDate}
+              />
+              {formik.errors.endDate && (
+                <small
+                  className="text-red-500 absolute"
+                  style={{ width: "100%", bottom: "-20px", left: "5px" }}
+                >
+                  {formik.errors.endDate}
+                </small>
+              )}
+            </div>
+            <div className="flex gap-1">
+              <Button icon="pi pi-search" type="submit" />
+              <Button
+                icon="pi pi-refresh"
+                type="reset"
+                className="p-button-secondary"
+              />
+            </div>
+          </form>
+        </section>
+        <section>
+          <div className="grid">
+            <div className="col-4">
+              <h4>Voltage (avg)</h4>
+              <div>{ChartUtils.getAvg(filtered, "voltage")}</div>
+            </div>
+            <div className="col-4">
+              <h4>Current (avg)</h4>
+              <div>{ChartUtils.getAvg(filtered, "current")}</div>
+            </div>
+            <div className="col-4">
+              <h4>Power (avg)</h4>
+              <div>{ChartUtils.getAvg(filtered, "power")}</div>
             </div>
           </div>
-          <div className="col-12">
-            <Chart type="line" data={chartData} options={chartOptions} />
+        </section>
+        <section>
+          <TabMenu
+            model={[
+              { label: "Voltage" },
+              { label: "Current" },
+              { label: "Power" },
+            ]}
+            onTabChange={(e) => setActive(e.index)}
+            activeIndex={active}
+          />
+          <div className="grid mt-3">
+            <div className="col-12">
+              {active === 0 && (
+                <Chart type="line" data={voltageData} options={voltageOption} />
+              )}
+              {active === 1 && (
+                <Chart type="line" data={currentData} options={currentOption} />
+              )}
+              {active === 2 && (
+                <Chart type="line" data={powerData} options={powerOption} />
+              )}
+            </div>
           </div>
-        </div>
-      </section>
-      <section>
-        <DataTable
-          responsiveLayout="stack"
-          value={records}
-          paginator
-          rowsPerPageOptions={[10, 25, 50]}
-          paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
-          rows={10}
-        >
-          <Column
-            field="timestamp"
-            header="Timestamp"
-            body={(record) => (
-              <span>{record.timestamp.toDate().toLocaleString()}</span>
-            )}
-          ></Column>
-          <Column field="voltage" header="Voltage"></Column>
-          <Column field="current" header="Current"></Column>
-          <Column
-            field="power"
-            header="Power"
-            align="center"
-            body={(record) => record.power || "-"}
-          ></Column>
-        </DataTable>
-      </section>
-    </Page>
+        </section>
+        <section>
+          <DataTable
+            responsiveLayout="stack"
+            value={filtered}
+            paginator
+            rowsPerPageOptions={[10, 25, 50]}
+            paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport RowsPerPageDropdown"
+            rows={10}
+          >
+            <Column
+              field="timestamp"
+              header="Timestamp"
+              body={(record) => (
+                <span>
+                  {DateTime.fromJSDate(record.timestamp.toDate()).toFormat(
+                    "dd/MM/yyyy hh:mm"
+                  )}
+                </span>
+              )}
+            ></Column>
+            <Column field="voltage" header="Voltage"></Column>
+            <Column field="current" header="Current"></Column>
+            <Column
+              field="power"
+              header="Power"
+              align="center"
+              body={(record) => record.power || "-"}
+            ></Column>
+          </DataTable>
+        </section>
+      </Page>
+    </PrivateRoute>
   );
 };
 
